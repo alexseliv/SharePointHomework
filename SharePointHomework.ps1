@@ -39,21 +39,15 @@ function CreateHubHome() {
     Add-PnPSiteCollectionAdmin -Owners $superAdmin
     Write-Host "Site Collection Administrators added: $superAdmin"
 
-    # https://docs.microsoft.com/en-us/sharepoint/dev/features/hub-site/create-hub-site-with-powershell
-    # https://pnp.github.io/powershell/cmdlets/Register-PnPHubSite.html
     Write-Host "Registering the site as a hub site... " -NoNewline
-    #Register-SPOHubSite -Site $hubHomeUrl
     Register-PnPHubSite -Site $hubHomeUrl
     Write-Host "done" -f Green
 
-    # https://lazyadmin.nl/office-365/enable-sharepoint-external-sharing/
     Write-Host "Enabling external sharing... " -NoNewline
     Set-PnPTenantSite -Url $hubHomeUrl -SharingCapability ExternalUserSharingOnly
     Write-Host "done" -f Green
 
     Write-Host "Applying 'If Design' to the '$hubHomeTitle'... " -NoNewline
-    #Add-PnPSiteDesign
-    #Set-PnPSiteDesign
     # NOTE: Here I assume, that there is an "If Design" available in the system.
     #       In real project I would write a function, where I would try to get the site design, and if it would not exist, I would create it, e.g. EnsureIfDesign()
     Invoke-PnPSiteDesign -WebUrl $hubHomeUrl -Identity "If Design"
@@ -100,6 +94,7 @@ function CreateHubDocs($hubHomeUrl) {
 
 try {
     # Install the necessary module PnP.PowerShell
+    # NOTE: Strange, but Get-Module doesn't return 'PnP.PowerShell' module unless Connect-PnPOnline is called...
     if (Get-Module -Name PnP.PowerShell) {
         Write-Host "PnP.PowerShell already installed" -f Gray
     } else {
