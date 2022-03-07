@@ -26,20 +26,7 @@ $superAdmin = "testuser1@yallamsdn.onmicrosoft.com"
 # and Admin user for 'Hub documents' only
 $admin = "testuser2@yallamsdn.onmicrosoft.com"
 
-try {
-    # Install the necessary module PnP.PowerShell
-    if (Get-Module -Name PnP.PowerShell) {
-        Write-Host "PnP.PowerShell already installed" -f Gray
-    } else {
-        Write-Host "Installing PnP.PowerShell module..."
-        Install-Module -Name PnP.PowerShell
-    }
-
-    # Connect to the admin center site, using your admin account
-    Connect-PnPOnline -Url $siteUrl -Interactive
-
-
-    
+function CreateHubHome() {
     $hubHomeTitle = "Hub Home"
     Write-Host "Creating '$hubHomeTitle'..." -f Green
     $hubHomeUrl = New-PnPSite -Type TeamSite -Title $hubHomeTitle -Alias "hubhome" -Lcid 1033 -Wait
@@ -47,6 +34,8 @@ try {
 
     Connect-PnPOnline -Url $hubHomeUrl -Interactive  # In my case it didn't ask for credentials, as they alredy provided earlier
 
+    # NOTE: I'm not sure about the lines below, probably something different has been meant by:
+    #       "Sets up a super admin user for both sites and another admin user for "Hub documents" site only."
     Add-PnPSiteCollectionAdmin -Owners $superAdmin
     Write-Host "Site Collection Administrators added: $superAdmin"
 
@@ -65,12 +54,15 @@ try {
     Write-Host "Applying 'If Design' to the '$hubHomeTitle'... " -NoNewline
     #Add-PnPSiteDesign
     #Set-PnPSiteDesign
-    # NOTE: In real project I would write a function, where I would try to get the site design, and if it would not exist, I would create it, e.g. EnsureIfDesign()
+    # NOTE: Here I assume, that there is an "If Design" available in the system.
+    #       In real project I would write a function, where I would try to get the site design, and if it would not exist, I would create it, e.g. EnsureIfDesign()
     Invoke-PnPSiteDesign -WebUrl $hubHomeUrl -Identity "If Design"
     Write-Host "done" -f Green
 
+    return $hubHomeUrl
+}
 
-
+function CreateHubDocs($hubHomeUrl) {
     $hubDocsTitle = "Hub documents"
     Write-Host "Creating '$($hubDocsTitle)'..." -f Green
     $hubDocsUrl = New-PnPSite -Type TeamSite -Title $hubDocsTitle -Alias "hubdocuments" -Lcid 1033 -Wait
@@ -87,7 +79,7 @@ try {
 
     $classifiedLibTitle = "Classified"
     Write-Host "Creating library '$($classifiedLibTitle)'... " -NoNewline
-    $classifiedLib = New-PnPList -Url "classified" -Title $libTitle -Template DocumentLibrary -OnQuickLaunch > $null
+    New-PnPList -Url "classified" -Title $libTitle -Template DocumentLibrary -OnQuickLaunch > $null
     Write-Host "done" -f Green
 
     $classifiedLib = Get-PnPList -Identity $classifiedLibTitle
@@ -104,6 +96,23 @@ try {
     Set-PnPListInformationRightsManagement -List $classifiedLib -PolicyTitle "Classified documents" -Enable $true -AllowPrint $true `
         -EnableDocumentAccessExpire $true -DocumentAccessExpireDays 90 -EnableLicenseCacheExpire $true -LicenseCacheExpireDays 90 > $null
     Write-Host "done" -f Green
+}
+
+try {
+    # Install the necessary module PnP.PowerShell
+    if (Get-Module -Name PnP.PowerShell) {
+        Write-Host "PnP.PowerShell already installed" -f Gray
+    } else {
+        Write-Host "Installing PnP.PowerShell module..."
+        Install-Module -Name PnP.PowerShell
+    }
+
+    # Connect to the admin center site, using your admin account
+    Connect-PnPOnline -Url $siteUrl -Interactive
+
+    $hubHomeUrl = CreateHubHome
+    
+    CreateHubDocs -hubHomeUrl $hubHomeUrl
 
 } catch [SystemException] {
     Write-Error $_
