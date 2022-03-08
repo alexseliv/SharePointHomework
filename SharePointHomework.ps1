@@ -87,7 +87,7 @@ function CreateHubDocs($hubHomeUrl) {
     #       I didn't find possibility to activate this requirement through PnP.PowerShell: "Do not allow users to upload documents that do not support IRM".
     #       In such case in real project I would try to use different approach.
     Write-Host "Setting IRM settings for the library '$classifiedLibTitle'... " -NoNewline
-    Set-PnPListInformationRightsManagement -List $classifiedLib -PolicyTitle "Classified documents" -Enable $true -AllowPrint $true `
+    Set-PnPListInformationRightsManagement -List $classifiedLib -PolicyTitle "Classified documents" -Enable $true -AllowPrint $true -EnableRejection $true `
         -EnableDocumentAccessExpire $true -DocumentAccessExpireDays 90 -EnableLicenseCacheExpire $true -LicenseCacheExpireDays 90 > $null
     Write-Host "done" -f Green
 }
